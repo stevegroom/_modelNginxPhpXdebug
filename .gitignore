@@ -1,0 +1,6 @@
+/.devcontainer
+/.docker
+/.dockerignore
+/.env
+/.vscode
+/php56

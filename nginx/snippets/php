@@ -1,0 +1,16 @@
+# NGINX Snippet to call php-fpm as a service on port 9000
+# From https://www.nginx.com/resources/wiki/start/topics/examples/phpfcgi/
+
+location ~ [^/]\.php(/|$) {
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+
+    if (!-f $document_root$fastcgi_script_name) {
+        return 404;
+    }
+
+    fastcgi_pass php:9000;
+    fastcgi_index index.php;
+    include /etc/nginx/snippets/fastcgi_params;
+}
+
+

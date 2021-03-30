@@ -1,0 +1,34 @@
+server {
+
+    # Accept all requests on port 8000 / mapped from file::.env/NGINX_APP_PORT
+    listen ${NGINX_PORT} default_server;
+    server_name ${NGINX_APP_SERVER};
+    index index.php index.html;
+
+    error_log  /var/log/nginx/error.log debug;
+    rewrite_log on;
+    access_log /var/log/nginx/access.log;
+    root /usr/share/nginx/html;
+
+    location / {
+        try_files $uri /index.php?$args;
+
+# Wide-open CORS config for this location
+    include /etc/nginx/snippets/corsOptions;
+
+    }
+
+# Handle .php pages via php-fpm serivce on port 9000
+    include /etc/nginx/snippets/php;
+
+# Wide-open CORS config for nginx
+    include /etc/nginx/snippets/jsonWithCors;
+
+#  CSS handling snippet for old gtsite.
+    include /etc/nginx/snippets/cssAsPhp;
+#  jpg handling snippet for old gtsite.
+    include /etc/nginx/snippets/imgAsPhp;
+
+
+}
+

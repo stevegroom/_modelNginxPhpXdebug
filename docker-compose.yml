@@ -1,0 +1,90 @@
+version: '3.7'
+#
+networks:
+  default:
+    external:
+      name: nucnuc
+
+services:
+  nginx:
+    build: nginx
+
+    hostname: nginx
+    # networks:
+    #   - nucnuc
+    #   - default
+
+    ports:
+      # Set the required port number here and update launcher :: siteCatalog.yml
+      - "${NGINX_PORT}:${NGINX_PORT}"
+
+    volumes:
+      - ./src/public:/usr/share/nginx/html:ro
+
+      - ./nginx/templates:/etc/nginx/templates
+      - ./nginx/sites-enabled:/etc/nginx/sites-enabled
+      - ./nginx/snippets:/etc/nginx/snippets
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./files:/files
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    environment:
+     - NGINX_HOST=${NGINX_HOST}
+     - NGINX_PORT=${NGINX_PORT}
+     - NGINX_APP_SERVER=${NGINX_APP_SERVER}
+     - NGINX_ENVSUBST_TEMPLATE_DIR=/etc/nginx/templates
+     - NGINX_ENVSUBST_TEMPLATE_SUFFIX=.template
+     - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=nucnuc"
+
+      - "traefik.http.routers.slice.entrypoints=websecure"
+      - "traefik.http.routers.slice.rule=Host(`slice.grooms.page`)"
+      - "traefik.http.routers.slice.service=slice"
+
+      # Authentication
+      - "traefik.http.routers.slice.middlewares=usersfile@file"
+
+      # Certificate name and san
+      - "traefik.http.routers.slice.tls.certresolver=basic"
+      - "traefik.http.routers.slice.tls.domains[0].main=grooms.page"
+      - "traefik.http.routers.slice.tls.domains[0].sans=*.grooms.page"
+
+      # Services
+      - "traefik.http.services.slice.loadbalancer.server.port=80"
+      - "traefik.http.services.slice.loadbalancer.server.url=http://192.168.1.137:8007/index.php"
+      - "traefik.http.services.slice.loadbalancer.server.scheme=http"
+      - "traefik.http.services.slice.loadbalancer.passhostheader=true"
+
+    links:
+      - php
+
+  php:
+    build: php
+    hostname: php
+
+    # networks:
+    #   - default
+
+    #ports:
+      # Expose the port for debugging
+      #- "9003:9003"
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+
+    #mem_limit: 4000000000
+    #memswap_limit: 8000000000
+    privileged: true
+
+    volumes:
+      - ./src/public:/usr/share/nginx/html
+      # On the php service run ps aux | grep php-fpm to see where the php-fpm.conf is found
+      #decided to stop sharing these files and use the Dockerfile to create the required entries
+      #- ./php/conf:/usr/local/etc
+      #- ./files:/files
+      #- ./php/php.ini:/usr/local/etc/php/php.ini

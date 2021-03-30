@@ -1,0 +1,10 @@
+#
+# Wide-open CORS config for .json files
+#
+
+    location ~ \.json$ {
+        add_header  Content-Type    application/json;
+
+    # Wide-open CORS config for this location
+    include /etc/nginx/snippets/corsOptions;
+    }
